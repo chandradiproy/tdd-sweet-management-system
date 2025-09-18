@@ -1,21 +1,35 @@
-// File Path: client/src/store/authStore.js
+// File Path: frontend/src/store/authStore.js
+import { create } from "zustand";
+import api from "../lib/api";
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+const useAuthStore = create((set) => ({
+  user: JSON.parse(localStorage.getItem("user")) || null,
+  token: localStorage.getItem("token") || null,
+  
+  login: async (email, password) => {
+    const { data } = await api.post('/auth/login', { email, password });
+    localStorage.setItem("user", JSON.stringify(data));
+    localStorage.setItem("token", data.token);
+    api.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+    set({ user: data, token: data.token });
+    return data;
+  },
 
-const useAuthStore = create(
-  persist(
-    (set) => ({
-      user: null,
-      token: null,
-      login: (userData, token) => set({ user: userData, token: token }),
-      logout: () => set({ user: null, token: null }),
-      setUser: (userData) => set({ user: userData }),
-    }),
-    {
-      name: 'auth-storage', // unique name for localStorage key
-    }
-  )
-);
+  register: async (name, email, password) => {
+    const { data } = await api.post('/auth/register', { name, email, password });
+    localStorage.setItem("user", JSON.stringify(data));
+    localStorage.setItem("token", data.token);
+    api.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+    set({ user: data, token: data.token });
+    return data;
+  },
+
+  logout: () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    set({ user: null, token: null });
+    delete api.defaults.headers.common["Authorization"];
+  },
+}));
 
 export default useAuthStore;

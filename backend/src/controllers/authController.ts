@@ -41,6 +41,7 @@ export const register = async (req: Request, res: Response) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
         token: generateToken(user._id.toString()),
       });
     } else {
@@ -67,6 +68,7 @@ export const login = async (req: Request, res: Response) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
         token: generateToken(user._id.toString()),
       });
     } else {
