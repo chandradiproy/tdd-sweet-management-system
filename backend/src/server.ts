@@ -4,6 +4,9 @@ import cors from 'cors';
 import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 
+import logger from './middleware/logger';
+import errorHandler from './middleware/errorHandler';
+
 dotenv.config()
 
 connectDB();
@@ -11,6 +14,8 @@ const app:Application = express();
 
 app.use(express.json()); //To enable JSON bodies
 app.use(cors());
+app.use(logger);
+app.use(errorHandler);
 
 app.get('/api', (req: Request, res: Response) => {
     res.status(200).json({"message  ":"Sweet Shop API is running ..."});
@@ -27,3 +32,5 @@ process.on('unhandledRejection', (err: any, promise) => {
   // Close server & exit process
   server.close(() => process.exit(1));
 });
+
+export default app;
