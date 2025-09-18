@@ -1,22 +1,29 @@
 // File Path: server/src/middleware/logger.ts
 
-import { Request, Response, NextFunction } from 'express';
+import pinoHttp from 'pino-http';
+import { IncomingMessage, ServerResponse } from 'http';
 
-/**
- * @desc Logs the HTTP method, URL, and status code of each request after it has finished processing
- */
-const logger = (req: Request, res: Response, next: NextFunction) => {
-  
-  // Listen for the 'finish' event on the response object
-  // This event is fired when the response has been sent
-  res.on('finish', () => {
-    // We can now access the final status code of the response
-    console.log(`${req.method} ${req.originalUrl} ${res.statusCode}`);
-  });
-  
-  // Pass control to the next middleware in the stack
-  next();
-};
+const logger = pinoHttp({
+  // Use pino-pretty for development
+  transport: process.env.NODE_ENV !== 'production' ? {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      levelFirst: true,
+      translateTime: 'SYS:h:MM:ss TT', // More readable time format
+      ignore: 'pid,hostname', // Ignore noisy fields
+    },
+  } : undefined,
+  level: 'info',
+  customLogLevel: function (req: IncomingMessage, res: ServerResponse, err?: Error): string {
+    if (res.statusCode >= 400 && res.statusCode < 500) {
+      return 'warn';
+    } else if (res.statusCode >= 500 || err) {
+      return 'error';
+    }
+    return 'info';
+  },
+});
 
 export default logger;
 
