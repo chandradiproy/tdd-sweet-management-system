@@ -2,6 +2,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 
+// Corrected: Removed the conflicting 'name' property from this interface.
+// The 'name' property is inherited from the base Error class.
 interface ErrorWithStatus extends Error {
   statusCode?: number;
 }
@@ -10,10 +12,15 @@ interface ErrorWithStatus extends Error {
  * @desc Catches all unhandled errors and sends a formatted JSON response
  */
 const errorHandler = (err: ErrorWithStatus, req: Request, res: Response, next: NextFunction) => {
+  // Check for Mongoose Validation Error
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({ message: err.message });
+  }
+
   // Determine the status code. Default to 500 (Internal Server Error) if not set.
   const statusCode = err.statusCode || 500;
 
-  // Log the error for debugging purposes (in a real app, you'd use a more robust logger)
+  // Log the error for debugging purposes
   console.error(`[ERROR] ${statusCode} - ${err.message}\n${err.stack}`);
 
   // Send a generic, user-friendly error response to the client
@@ -25,3 +32,4 @@ const errorHandler = (err: ErrorWithStatus, req: Request, res: Response, next: N
 };
 
 export default errorHandler;
+

@@ -3,13 +3,13 @@ import Sweet from '../models/Sweet';
 import { IAuthRequest } from '../middleware/authMiddleware';
 
 /**
- * @desc Get all sweets (with search)
+ * @desc Get all sweets (with search and pagination)
  * @route GET /api/sweets
  * @access Private
  */
 export const getSweets = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { search, category, minPrice, maxPrice } = req.query;
+    const { search, category, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
     let query: any = {};
     if (search) {
       query.name = { $regex: search, $options: 'i' };
@@ -22,8 +22,21 @@ export const getSweets = async (req: Request, res: Response, next: NextFunction)
       if (minPrice) query.price.$gte = Number(minPrice);
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
-    const sweets = await Sweet.find(query);
-    res.json(sweets);
+    
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    const count = await Sweet.countDocuments(query);
+    const sweets = await Sweet.find(query)
+      .limit(limitNum)
+      .skip(limitNum * (pageNum - 1));
+
+    res.json({
+      sweets,
+      page: pageNum,
+      pages: Math.ceil(count / limitNum),
+      total: count
+    });
   } catch (error) {
     next(error);
   }
@@ -116,17 +129,21 @@ export const purchaseSweet = async (req: IAuthRequest, res: Response, next: Next
 export const restockSweet = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { quantity } = req.body;
-    if (quantity === undefined || Number(quantity) <= 0) {
-      return res.status(400).json({ message: 'Please provide a valid quantity to add' });
+    const amountToAdd = Number(quantity);
+
+    if (!Number.isInteger(amountToAdd) || amountToAdd <= 0) {
+      return res.status(400).json({ message: 'Please provide a valid positive integer for quantity.' });
     }
+    
     const sweet = await Sweet.findById(req.params.id);
     if (!sweet) {
       return res.status(404).json({ message: 'Sweet not found' });
     }
-    sweet.quantity += Number(quantity);
+    sweet.quantity += amountToAdd;
     await sweet.save();
     res.json(sweet);
   } catch (error) {
     next(error);
   }
 };
+

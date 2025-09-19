@@ -1,6 +1,6 @@
 // File Path: server/src/controllers/authController.ts
 
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
@@ -16,7 +16,7 @@ const generateToken = (id: string) => {
  * @route   POST /api/auth/register
  * @access  Public
  */
-export const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, email, password } = req.body;
 
@@ -48,7 +48,7 @@ export const register = async (req: Request, res: Response) => {
       res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    next(error);
   }
 };
 
@@ -57,7 +57,7 @@ export const register = async (req: Request, res: Response) => {
  * @route   POST /api/auth/login
  * @access  Public
  */
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
 
@@ -75,7 +75,6 @@ export const login = async (req: Request, res: Response) => {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    next(error);
   }
 };
-

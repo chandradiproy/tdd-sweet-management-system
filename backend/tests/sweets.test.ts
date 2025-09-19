@@ -2,7 +2,7 @@
 
 import request from "supertest";
 import mongoose from "mongoose";
-import app, { server } from "../src/server"; // Correct import
+import app, { server } from "../src/server";
 import User, { IUser } from "../src/models/User";
 import Sweet, { ISweet } from "../src/models/Sweet";
 import jwt from "jsonwebtoken";
@@ -26,52 +26,32 @@ describe("Sweets API Endpoints", () => {
     return jwt.sign({ id }, secret, { expiresIn: "1d" });
   };
 
-  // No more manual mongoose.connect in beforeAll
+  beforeAll(async () => {
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
+      throw new Error("MONGO_URI is not defined in the .env file for testing");
+    }
+    await mongoose.connect(mongoUri);
+  });
+  
   beforeEach(async () => {
-    // Clear collections and wait for completion
     await Promise.all([User.deleteMany({}), Sweet.deleteMany({})]);
 
-    // Create users and wait for them to be fully saved
-    adminUser = await User.create({
-      name: "Admin",
-      email: "admin@test.com",
-      password: "password123",
-      role: "admin",
-    });
+    [adminUser, regularUser] = await Promise.all([
+        User.create({ name: "Admin", email: "admin@test.com", password: "password123", role: "admin" }),
+        User.create({ name: "User", email: "user@test.com", password: "password123", role: "customer" })
+    ]);
 
-    regularUser = await User.create({
-      name: "User",
-      email: "user@test.com",
-      password: "password123",
-      role: "customer",
-    });
-
-    // Ensure users are saved before generating tokens
-    await adminUser.save();
-    await regularUser.save();
-
-    // Generate tokens only after users are confirmed saved
     adminToken = generateToken(adminUser._id.toString());
     userToken = generateToken(regularUser._id.toString());
 
-    // Create sweets
-    sweet1 = await Sweet.create({
-      name: "Chocolate Bar",
-      category: "Candy",
-      price: 1.5,
-      quantity: 10,
-    });
-
-    sweet2 = await Sweet.create({
-      name: "Gummy Bears",
-      category: "Gummy",
-      price: 2.0,
-      quantity: 0,
-    });
+    [sweet1, sweet2] = await Promise.all([
+        Sweet.create({ name: "Chocolate Bar", category: "Candy", price: 1.5, quantity: 10 }),
+        Sweet.create({ name: "Gummy Bears", category: "Gummy", price: 2.0, quantity: 0 })
+    ]);
   });
 
   afterAll((done) => {
-    // Close the server and the database connection gracefully
     server.close(() => {
       mongoose.connection.close().then(() => done());
     });
@@ -80,22 +60,38 @@ describe("Sweets API Endpoints", () => {
   // --- CRUD Operations ---
 
   describe("GET /api/sweets", () => {
-    it("should get all sweets for an authenticated user", async () => {
-      console.log("User ID:", regularUser._id);
-      console.log("Token generated:", !!userToken);
-      console.log("Token length:", userToken?.length);
-
+    it("should get the first page of sweets with default limit", async () => {
       const res = await request(app)
         .get("/api/sweets")
         .set("Authorization", `Bearer ${userToken}`);
 
-      if (res.statusCode !== 200) {
-        console.log("Response body:", res.body);
-        console.log("Response status:", res.statusCode);
-      }
-
       expect(res.statusCode).toBe(200);
-      expect(res.body.length).toBe(2);
+      expect(res.body).toHaveProperty('sweets');
+      expect(res.body).toHaveProperty('page', 1);
+      expect(res.body).toHaveProperty('pages', 1);
+      expect(res.body).toHaveProperty('total', 2);
+      expect(res.body.sweets.length).toBe(2);
+    });
+    
+    it("should handle pagination correctly", async () => {
+      // Create more sweets to test pagination
+      const sweetsToAdd = Array.from({ length: 15 }, (_, i) => ({
+        name: `Sweet ${i + 3}`,
+        category: "Test",
+        price: 1,
+        quantity: 5,
+      }));
+      await Sweet.insertMany(sweetsToAdd);
+
+      const res = await request(app)
+        .get("/api/sweets?page=2&limit=5")
+        .set("Authorization", `Bearer ${userToken}`);
+        
+      expect(res.statusCode).toBe(200);
+      expect(res.body.page).toBe(2);
+      expect(res.body.sweets.length).toBe(5);
+      expect(res.body.total).toBe(17); // 2 initial + 15 new
+      expect(res.body.pages).toBe(4); // 17 items, 5 per page
     });
 
     it("should fail if user is not authenticated", async () => {
@@ -109,8 +105,8 @@ describe("Sweets API Endpoints", () => {
         .set("Authorization", `Bearer ${userToken}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.length).toBe(1);
-      expect(res.body[0].name).toBe("Chocolate Bar");
+      expect(res.body.sweets.length).toBe(1);
+      expect(res.body.sweets[0].name).toBe("Chocolate Bar");
     });
   });
 
@@ -129,6 +125,22 @@ describe("Sweets API Endpoints", () => {
       expect(res.statusCode).toBe(201);
       expect(res.body.name).toBe("Lollipop");
     });
+
+    it("should fail to add a sweet with a negative price", async () => {
+        const res = await request(app)
+          .post("/api/sweets")
+          .set("Authorization", `Bearer ${adminToken}`)
+          .send({
+            name: "Bad Sweet",
+            category: "Invalid",
+            price: -5,
+            quantity: 20,
+          });
+  
+        // Corrected: Expect 400 because our errorHandler now handles ValidationErrors correctly
+        expect(res.statusCode).toBe(400); 
+        expect(res.body.message).toContain('Price cannot be negative');
+      });
 
     it("should prevent a regular user from adding a sweet", async () => {
       const res = await request(app)
@@ -187,7 +199,6 @@ describe("Sweets API Endpoints", () => {
 
     it("should fail if user is not authenticated", async () => {
       const res = await request(app).post(`/api/sweets/${sweet1._id}/purchase`);
-
       expect(res.statusCode).toBe(401);
     });
   });
@@ -213,3 +224,4 @@ describe("Sweets API Endpoints", () => {
     });
   });
 });
+

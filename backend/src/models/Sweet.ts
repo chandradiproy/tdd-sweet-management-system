@@ -23,10 +23,12 @@ const sweetSchema = new Schema<ISweet>({
   price: {
     type: Number,
     required: [true, 'Please add a price'],
+    min: [0, 'Price cannot be negative'],
   },
   quantity: {
     type: Number,
     required: [true, 'Please add a quantity'],
+    min: [0, 'Quantity cannot be negative'],
     default: 0,
   },
 }, {
@@ -34,3 +36,4 @@ const sweetSchema = new Schema<ISweet>({
 });
 
 export default mongoose.model<ISweet>('Sweet', sweetSchema);
+

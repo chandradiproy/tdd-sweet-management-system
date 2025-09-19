@@ -3,6 +3,7 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../src/server'; // Import the configured express app
+import server from '../src/server';
 import User from '../src/models/User';
 import dotenv from 'dotenv';
 
@@ -21,18 +22,19 @@ describe('Auth Endpoints', () => {
     if (!mongoUri) {
       throw new Error('MONGO_URI is not defined in the .env file for testing');
     }
-    // Use a separate test database or ensure the main one is cleaned
     await mongoose.connect(mongoUri);
   });
 
-  // Clear the users collection after each test to ensure a clean slate
-  afterEach(async () => {
+  // Clear the users collection before each test to ensure a clean slate
+  beforeEach(async () => {
     await User.deleteMany({});
   });
 
   // Disconnect from the database after all tests are done
-  afterAll(async () => {
-    await mongoose.connection.close();
+  afterAll((done) => {
+    server.close(() => {
+      mongoose.connection.close().then(() => done());
+    });
   });
 
 

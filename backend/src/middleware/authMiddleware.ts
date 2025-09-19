@@ -25,24 +25,24 @@ export const protect = async (req: IAuthRequest, res: Response, next: NextFuncti
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
       
       // Get user from the token (excluding the password)
-      req.user = await User.findById(decoded.id).select('-password');
+      const user = await User.findById(decoded.id).select('-password');
 
-      if (!req.user) {
-        res.status(401);
-        throw new Error('Not authorized, user not found');
+      if (!user) {
+        // If user not found, send 401 response directly
+        return res.status(401).json({ message: 'Not authorized, user not found' });
       }
-
+      
+      req.user = user;
       next();
     } catch (error) {
-      console.error(error);
-      res.status(401);
-      throw new Error('Not authorized, token failed');
+      // If token is invalid or expired, send 401 response directly
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }
 
   if (!token) {
-    res.status(401);
-    throw new Error('Not authorized, no token');
+    // If no token is present, send 401 response directly
+    return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
 
@@ -51,7 +51,7 @@ export const admin = (req: IAuthRequest, res: Response, next: NextFunction) => {
   if (req.user && req.user.role === 'admin') {
     next();
   } else {
-    res.status(403); // 403 Forbidden
-    throw new Error('Not authorized as an admin');
+    // If user is not an admin, send 403 response directly
+    return res.status(403).json({ message: 'Not authorized as an admin' });
   }
 };
