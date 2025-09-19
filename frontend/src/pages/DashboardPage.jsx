@@ -1,62 +1,58 @@
 // File Path: frontend/src/pages/DashboardPage.jsx
 import React, { useEffect, useState } from 'react';
-import  useAuthStore  from '@/store/authStore';
-import  useSweetStore  from '@/store/sweetStore';
+import useAuthStore from '@/store/authStore';
+import useSweetStore from '@/store/sweetStore';
 import { SweetCard } from '@/components/SweetCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SweetFormDialog } from '@/components/SweetFormDialog';
 import { PlusCircle, LoaderCircle, Search } from 'lucide-react';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from '@/components/ui/pagination';
 
 const DashboardPage = () => {
   const { user } = useAuthStore();
-  // FIX: Destructuring the correct actions from the store
-  const { sweets, isLoading, fetchSweets, addSweet, updateSweet, deleteSweetById, purchaseSweet, restockSweet } = useSweetStore();
+  const { sweets, pages, total, isLoading, fetchSweets, purchaseSweet, restockSweet, deleteSweetById } = useSweetStore();
   
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [editingSweet, setEditingSweet] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    fetchSweets(searchTerm);
-  }, [fetchSweets, searchTerm]);
-
-  const handleOpenAddModal = () => {
-    setEditingSweet(null); // Ensure we are in "add" mode
-    setIsFormOpen(true);
-  };
+    fetchSweets(searchTerm, currentPage);
+  }, [fetchSweets, searchTerm, currentPage]);
 
   const handleOpenEditModal = (sweet) => {
     setEditingSweet(sweet);
-    setIsFormOpen(true);
-  };
-
-  const handleSaveSweet = (sweetData) => {
-    if (editingSweet) {
-      updateSweet(editingSweet._id, sweetData);
-    } else {
-      addSweet(sweetData);
-    }
+    setIsEditFormOpen(true);
   };
   
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= pages) {
+      setCurrentPage(newPage);
+    }
+  };
+
   const isAdmin = user?.role === 'admin';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white">Welcome, {user?.name}!</h1>
-          <p className="text-gray-500 dark:text-gray-400">Manage your delicious inventory.</p>
+          <p className="text-gray-500 dark:text-gray-400">Manage your delicious inventory. Showing {sweets.length} of {total} sweets.</p>
         </div>
-        {/* FIX: The SweetFormDialog now wraps the button that triggers it. */}
         {isAdmin && (
-           <SweetFormDialog
-            open={isFormOpen && !editingSweet} // Only open for adding new sweets
-            onOpenChange={setIsFormOpen}
-            sweet={null}
-            onSave={handleSaveSweet}
-          >
-            <Button>
+           <SweetFormDialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
+            <Button onClick={() => setIsAddFormOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add New Sweet
             </Button>
           </SweetFormDialog>
@@ -70,7 +66,10 @@ const DashboardPage = () => {
           placeholder="Search for sweets..."
           className="w-full pl-10"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
         />
       </div>
 
@@ -79,6 +78,7 @@ const DashboardPage = () => {
           <LoaderCircle className="h-12 w-12 animate-spin text-pink-500" />
         </div>
       ) : sweets.length > 0 ? (
+        <>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {sweets.map((sweet) => (
             <SweetCard
@@ -92,6 +92,39 @@ const DashboardPage = () => {
             />
           ))}
         </div>
+        
+        {pages > 1 && (
+            <Pagination className="mt-8">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#" 
+                    onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }} 
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                  />
+                </PaginationItem>
+                {[...Array(pages).keys()].map((p) => (
+                  <PaginationItem key={p + 1}>
+                    <PaginationLink 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); handlePageChange(p + 1); }} 
+                      isActive={currentPage === p + 1}
+                    >
+                      {p + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#" 
+                    onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }} 
+                    className={currentPage === pages ? "pointer-events-none opacity-50" : undefined}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
       ) : (
         <div className="text-center py-20">
           <h3 className="text-xl font-semibold">No Sweets Found</h3>
@@ -101,15 +134,18 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* This Dialog instance is now specifically for editing */}
-      <SweetFormDialog
-        open={isFormOpen && !!editingSweet}
-        onOpenChange={setIsFormOpen}
-        sweet={editingSweet}
-        onSave={handleSaveSweet}
-      />
+      {/* The Dialog for editing sweets */}
+      {editingSweet && (
+        <SweetFormDialog
+          key={editingSweet._id}
+          open={isEditFormOpen}
+          onOpenChange={setIsEditFormOpen}
+          sweet={editingSweet}
+        />
+      )}
     </div>
   );
 };
 
 export default DashboardPage;
+

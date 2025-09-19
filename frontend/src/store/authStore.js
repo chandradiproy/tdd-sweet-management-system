@@ -30,6 +30,14 @@ const useAuthStore = create((set) => ({
     set({ user: null, token: null });
     delete api.defaults.headers.common["Authorization"];
   },
+
+  // New action to update the currently logged-in user's data
+  updateCurrentUser: (updatedUserData) => {
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    const newUser = { ...user, ...updatedUserData };
+    localStorage.setItem("user", JSON.stringify(newUser));
+    set({ user: newUser });
+  }
 }));
 
 export default useAuthStore;

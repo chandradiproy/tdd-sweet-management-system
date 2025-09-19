@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
+import { IAuthRequest } from '../middleware/authMiddleware';
 
 const generateToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET as string, {
@@ -78,3 +79,29 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     next(error);
   }
 };
+
+/**
+ * @desc    Get current user profile
+ * @route   GET /api/auth/me
+ * @access  Private
+ */
+export const getMe = async (req: IAuthRequest, res: Response, next: NextFunction) => {
+    try {
+        // req.user is populated by the 'protect' middleware
+        const user = await User.findById(req.user?._id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        res.status(200).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
