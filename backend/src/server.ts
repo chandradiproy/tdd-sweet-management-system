@@ -6,6 +6,7 @@ import connectDB from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import sweetRoutes from "./routes/sweetRoutes";
 import userRoutes from "./routes/userRoutes";
+import cartRoutes from "./routes/cartRoutes"; // Import cart routes
 import logger from "./middleware/logger";
 import errorHandler from "./middleware/errorHandler";
 
@@ -36,6 +37,7 @@ app.use("/api/auth", authLimiter, authRoutes);
 
 app.use("/api/sweets", sweetRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/cart", cartRoutes); // Use cart routes
 
 app.use(errorHandler);
 

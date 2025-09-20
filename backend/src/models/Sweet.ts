@@ -3,6 +3,7 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface ISweet extends Document {
+  _id: Types.ObjectId;
   name: string;
   category: string;
   price: number;

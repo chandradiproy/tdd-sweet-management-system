@@ -1,9 +1,11 @@
 // File Path: frontend/src/components/Navbar.jsx
 import React, { useState, useEffect } from 'react';
+import useCartStore from '@/store/cartStore';
 import { Button } from './ui/button';
-import { LogOut, UserPlus, LogIn, Moon, Sun, Menu, X, Candy, Users } from 'lucide-react';
+import { Badge } from './ui/badge';
+import { LogOut, UserPlus, LogIn, Moon, Sun, Menu, X, Candy, Users, ShoppingCart } from 'lucide-react';
 
-const Navbar = ({ user, navigate, currentView }) => {
+const Navbar = ({ user, navigate, currentView, onCartClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -11,6 +13,8 @@ const Navbar = ({ user, navigate, currentView }) => {
     }
     return false;
   });
+
+  const { itemCount } = useCartStore();
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
@@ -47,9 +51,15 @@ const Navbar = ({ user, navigate, currentView }) => {
                 </Button>
             ))}
             {user && (
+              <>
+                <Button variant="ghost" className="relative" onClick={onCartClick}>
+                    <ShoppingCart className="mr-2 h-4 w-4" /> Cart
+                    {itemCount > 0 && <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">{itemCount}</Badge>}
+                </Button>
                 <Button variant="ghost" onClick={() => navigate("logout")}>
                     <LogOut className="mr-2 h-4 w-4" /> Logout
                 </Button>
+              </>
             )}
              <Button variant="ghost" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
                 <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -76,9 +86,15 @@ const Navbar = ({ user, navigate, currentView }) => {
                 </Button>
             ))}
              {user && (
-                <Button variant="ghost" className="w-full justify-start" onClick={() => { navigate("logout"); setIsMenuOpen(false); }}>
-                    <LogOut className="mr-2 h-4 w-4" /> Logout
-                </Button>
+                <>
+                  <Button variant="ghost" className="w-full justify-start relative" onClick={() => { onCartClick(); setIsMenuOpen(false); }}>
+                      <ShoppingCart className="mr-2 h-4 w-4" /> Cart
+                      {itemCount > 0 && <Badge className="absolute top-1 right-1 h-5 w-5 p-0 flex items-center justify-center">{itemCount}</Badge>}
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start" onClick={() => { navigate("logout"); setIsMenuOpen(false); }}>
+                      <LogOut className="mr-2 h-4 w-4" /> Logout
+                  </Button>
+                </>
             )}
           </div>
         </div>
