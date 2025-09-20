@@ -1,11 +1,11 @@
 import express, { Application, Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import rateLimit from 'express-rate-limit';
 import connectDB from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import sweetRoutes from "./routes/sweetRoutes";
 import userRoutes from "./routes/userRoutes";
-
 import logger from "./middleware/logger";
 import errorHandler from "./middleware/errorHandler";
 
@@ -18,10 +18,22 @@ app.use(express.json()); //To enable JSON bodies
 app.use(cors());
 app.use(logger);
 
-app.get("/api", (req: Request, res: Response) => {
-  res.status(200).json({ "message  ": "Sweet Shop API is running ..." });
+// Rate Limiter for authentication routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // Limit each IP to 15 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many login attempts from this IP, please try again after 15 minutes' }
 });
-app.use("/api/auth", authRoutes);
+
+app.get("/api", (req: Request, res: Response) => {
+  res.status(200).json({ "message": "Sweet Shop API is running ..." });
+});
+
+// Apply the limiter only to the auth routes
+app.use("/api/auth", authLimiter, authRoutes);
+
 app.use("/api/sweets", sweetRoutes);
 app.use("/api/users", userRoutes);
 

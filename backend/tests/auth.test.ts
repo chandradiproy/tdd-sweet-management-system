@@ -139,6 +139,32 @@ describe('Auth Endpoints', () => {
         // Assertions
         expect(res.statusCode).toEqual(401);
         expect(res.body.message).toBe('Invalid email or password');
-      });
+    });
+
+    it('should block login attempts after too many failures', async () => {
+        const agent = request.agent(app);
+        const loginPromises = [];
+    
+        // Make 15 failed attempts
+        for (let i = 0; i < 15; i++) {
+            loginPromises.push(
+                agent.post('/api/auth/login').send({
+                    email: 'login@example.com',
+                    password: 'wrongpassword'
+                })
+            );
+        }
+    
+        await Promise.all(loginPromises);
+    
+        // The next attempt should be blocked
+        const finalRes = await agent.post('/api/auth/login').send({
+            email: 'login@example.com',
+            password: 'wrongpassword'
+        });
+    
+        expect(finalRes.statusCode).toBe(429);
+        expect(finalRes.body.message).toContain('Too many login attempts');
+    });
   });
 });
