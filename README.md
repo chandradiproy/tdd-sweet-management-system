@@ -3,15 +3,38 @@
 SweetScape is a full-stack web application designed as a comprehensive management system for a sweet shop. It features a secure, role-based system catering to both customers and administrators, built with a modern technology stack and following Test-Driven Development (TDD) principles.
 
 ### **Table of Contents**
-
-1.  [Screenshots](#screenshots)
-2.  [Features](#features)
-3.  [Tech Stack](#tech-stack)
-4.  [Setup and Run Instructions](#setup-and-run-instructions)
-5.  [Running Tests](#running-tests)
-6.  [My AI Usage](#my-ai-usage)
+1. [Live Demo](#live-demo--credentials)
+2.  [Screenshots](#screenshots)
+3.  [Features](#features)
+4.  [Tech Stack](#tech-stack)
+5.  [Setup and Run Instructions](#setup-and-run-instructions)
+6.  [Running Tests](#running-tests)
+7.  [My AI Usage](#my-ai-usage)
 
 -----
+
+## **Live Demo & Credentials**
+
+You can access the live, deployed version of the application here:
+
+**[https://sweetscape-app-jfeo.onrender.com/](https://www.google.com/search?q=https://sweetscape-app-jfeo.onrender.com/)**
+
+> **Note:** The application is hosted on Render's free tier. If the app has been inactive, the server may "spin down" to conserve resources. As a result, the initial load might take up to 30-60 seconds while the server restarts. Subsequent requests will be fast.
+
+You can use the following credentials to test the different user roles:
+
+#### **Admin Access:**
+
+  - **Email:** `admin@test.com`
+  - **Password:** `password123`
+
+#### **Customer Access:**
+
+  - **Email:** `login@example.com`
+  - **Password:** `password123`
+
+-----
+
 
 ## **Screenshots**
 
