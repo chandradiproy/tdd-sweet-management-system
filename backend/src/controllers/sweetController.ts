@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { validationResult } from 'express-validator';
 import Sweet from '../models/Sweet';
 import { IAuthRequest } from '../middleware/authMiddleware';
 
@@ -57,11 +58,13 @@ export const getSweets = async (req: Request, res: Response, next: NextFunction)
  * @access Private/Admin
  */
 export const addSweet = async (req: Request, res: Response, next: NextFunction) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const { name, category, price, quantity } = req.body;
-    if (!name || !category || price === undefined || quantity === undefined) {
-      return res.status(400).json({ message: 'Please provide all required fields' });
-    }
     const sweet = await Sweet.create({ name, category, price, quantity });
     res.status(201).json(sweet);
   } catch (error) {
@@ -75,6 +78,11 @@ export const addSweet = async (req: Request, res: Response, next: NextFunction) 
  * @access Private/Admin
  */
 export const updateSweet = async (req: Request, res: Response, next: NextFunction) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const sweet = await Sweet.findById(req.params.id);
     if (!sweet) {

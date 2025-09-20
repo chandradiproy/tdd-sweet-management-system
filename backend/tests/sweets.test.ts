@@ -126,22 +126,6 @@ describe("Sweets API Endpoints", () => {
       expect(res.body.name).toBe("Lollipop");
     });
 
-    it("should fail to add a sweet with a negative price", async () => {
-        const res = await request(app)
-          .post("/api/sweets")
-          .set("Authorization", `Bearer ${adminToken}`)
-          .send({
-            name: "Bad Sweet",
-            category: "Invalid",
-            price: -5,
-            quantity: 20,
-          });
-  
-        // Corrected: Expect 400 because our errorHandler now handles ValidationErrors correctly
-        expect(res.statusCode).toBe(400); 
-        expect(res.body.message).toContain('Price cannot be negative');
-      });
-
     it("should prevent a regular user from adding a sweet", async () => {
       const res = await request(app)
         .post("/api/sweets")
@@ -154,6 +138,54 @@ describe("Sweets API Endpoints", () => {
         });
 
       expect(res.statusCode).toBe(403);
+    });
+    
+    // --- New Validation and Sanitization Tests ---
+    describe("Validation and Sanitization", () => {
+        it("should fail if required fields are missing", async () => {
+            const res = await request(app)
+              .post("/api/sweets")
+              .set("Authorization", `Bearer ${adminToken}`)
+              .send({ name: "Incomplete Sweet" });
+      
+            expect(res.statusCode).toBe(400);
+            expect(res.body.errors).toBeInstanceOf(Array);
+            expect(res.body.errors.length).toBeGreaterThan(0);
+        });
+
+        it("should fail if price is not a positive number", async () => {
+            const res = await request(app)
+              .post("/api/sweets")
+              .set("Authorization", `Bearer ${adminToken}`)
+              .send({ name: "Bad Price", category: "Test", price: -10, quantity: 5 });
+      
+            expect(res.statusCode).toBe(400);
+            expect(res.body.errors[0].msg).toBe("Price must be a positive number.");
+        });
+
+        it("should fail if quantity is not an integer", async () => {
+            const res = await request(app)
+              .post("/api/sweets")
+              .set("Authorization", `Bearer ${adminToken}`)
+              .send({ name: "Float Quantity", category: "Test", price: 1, quantity: 5.5 });
+      
+            expect(res.statusCode).toBe(400);
+            expect(res.body.errors[0].msg).toBe("Quantity must be a non-negative integer.");
+        });
+
+        it("should trim and escape input fields", async () => {
+            const maliciousName = ' <script>alert("XSS")</script> ';
+            const expectedName = '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#x2F;script&gt;';
+
+            const res = await request(app)
+                .post("/api/sweets")
+                .set("Authorization", `Bearer ${adminToken}`)
+                .send({ name: maliciousName, category: "  XSS  ", price: 1, quantity: 1 });
+
+            expect(res.statusCode).toBe(201);
+            expect(res.body.name).toBe(expectedName);
+            expect(res.body.category).toBe("XSS");
+        });
     });
   });
 
@@ -224,4 +256,3 @@ describe("Sweets API Endpoints", () => {
     });
   });
 });
-

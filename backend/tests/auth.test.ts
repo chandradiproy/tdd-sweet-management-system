@@ -3,7 +3,7 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../src/server'; // Import the configured express app
-import server from '../src/server';
+import {server} from '../src/server';
 import User from '../src/models/User';
 import dotenv from 'dotenv';
 

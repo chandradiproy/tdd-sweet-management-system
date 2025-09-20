@@ -3,22 +3,33 @@ import { create } from "zustand";
 import api from "../lib/api";
 import { toast } from "@/hooks/use-toast";
 
+const handleApiError = (error, title) => {
+  let description = "An unexpected error occurred.";
+  if (error.response?.data?.errors) {
+    description = error.response.data.errors.map(e => e.msg).join('\n');
+  } else if (error.response?.data?.message) {
+    description = error.response.data.message;
+  }
+  toast({
+    title: title,
+    description: description,
+    variant: "destructive",
+  });
+};
+
 const useSweetStore = create((set) => ({
   sweets: [],
-  // Add state to hold pagination data
   page: 1,
   pages: 1,
   total: 0,
   isLoading: true,
 
-  // Pass page and limit to the fetch function
   fetchSweets: async (searchTerm = "", page = 1, limit = 8, category = "", sort = "") => {
     set({ isLoading: true });
     try {
       const { data } = await api.get("/sweets", { 
         params: { search: searchTerm, page, limit, category, sort } 
       });
-      // Store the full paginated response
       set({ 
         sweets: data.sweets,
         page: data.page,
@@ -28,11 +39,7 @@ const useSweetStore = create((set) => ({
       });
     } catch (error) {
       console.error("Failed to fetch sweets", error);
-      toast({
-        title: "Error",
-        description: "Could not fetch sweets. Please try again later.",
-        variant: "destructive",
-      });
+      handleApiError(error, "Error Fetching Sweets");
       set({ isLoading: false });
     }
   },
@@ -44,14 +51,9 @@ const useSweetStore = create((set) => ({
         title: "Success!",
         description: `${sweetData.name} has been added to the inventory.`,
       });
-      // Refresh the current page to show the new sweet
       useSweetStore.getState().fetchSweets("", useSweetStore.getState().page);
     } catch (error) {
-      toast({
-        title: "Error Adding Sweet",
-        description: error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      handleApiError(error, "Error Adding Sweet");
     }
   },
 
@@ -62,14 +64,9 @@ const useSweetStore = create((set) => ({
         title: "Success!",
         description: `${sweetData.name} has been updated.`,
       });
-      // Refresh the current page
       useSweetStore.getState().fetchSweets("", useSweetStore.getState().page);
     } catch (error) {
-       toast({
-        title: "Error Updating Sweet",
-        description: error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+       handleApiError(error, "Error Updating Sweet");
     }
   },
   
@@ -80,18 +77,13 @@ const useSweetStore = create((set) => ({
         title: "Purchase Successful!",
         description: `You purchased one ${sweetName}.`,
       });
-      // No full refresh needed, just update the single sweet in the list
       set((state) => ({
         sweets: state.sweets.map((s) =>
           s._id === sweetId ? { ...s, quantity: s.quantity - 1 } : s
         ),
       }));
     } catch (error) {
-      toast({
-        title: "Purchase Failed",
-        description: error.response?.data?.message || "An error occurred.",
-        variant: "destructive",
-      });
+      handleApiError(error, "Purchase Failed");
     }
   },
   
@@ -106,11 +98,7 @@ const useSweetStore = create((set) => ({
         sweets: state.sweets.map((s) => (s._id === sweetId ? data : s)),
       }));
     } catch (error) {
-      toast({
-        title: "Restock Failed",
-        description: error.response?.data?.message || "An error occurred.",
-        variant: "destructive",
-      });
+      handleApiError(error, "Restock Failed");
     }
   },
 
@@ -121,14 +109,9 @@ const useSweetStore = create((set) => ({
         title: "Success",
         description: "The sweet has been deleted.",
       });
-       // After deleting, refresh the current page's data
       useSweetStore.getState().fetchSweets("", useSweetStore.getState().page);
     } catch (error) {
-       toast({
-        title: "Error Deleting Sweet",
-        description: error.response?.data?.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+       handleApiError(error, "Error Deleting Sweet");
     }
   },
 }));
