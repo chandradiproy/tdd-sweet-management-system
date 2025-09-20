@@ -1,17 +1,15 @@
-Of course. Here is the updated, comprehensive `README.md` file for your project. It now includes all the new features we've implemented, updated screenshots, and a more detailed "My AI Usage" section reflecting our collaboration.
-
 # **Sweet Shop Management System - "SweetScape"**
 
 SweetScape is a full-stack web application designed as a comprehensive management system for a sweet shop. It features a secure, role-based system catering to both customers and administrators, built with a modern technology stack and following Test-Driven Development (TDD) principles.
 
 ### **Table of Contents**
 
-1.  [Screenshots](https://www.google.com/search?q=%23screenshots)
-2.  [Features](https://www.google.com/search?q=%23features)
-3.  [Tech Stack](https://www.google.com/search?q=%23tech-stack)
-4.  [Setup and Run Instructions](https://www.google.com/search?q=%23setup-and-run-instructions)
-5.  [Running Tests](https://www.google.com/search?q=%23running-tests)
-6.  [My AI Usage](https://www.google.com/search?q=%23my-ai-usage)
+1.  [Screenshots](#screenshots)
+2.  [Features](#features)
+3.  [Tech Stack](#tech-stack)
+4.  [Setup and Run Instructions](#setup-and-run-instructions)
+5.  [Running Tests](#running-tests)
+6.  [My AI Usage](#my-ai-usage)
 
 -----
 
