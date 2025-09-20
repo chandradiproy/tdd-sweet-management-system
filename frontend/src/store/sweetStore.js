@@ -12,11 +12,11 @@ const useSweetStore = create((set) => ({
   isLoading: true,
 
   // Pass page and limit to the fetch function
-  fetchSweets: async (searchTerm = "", page = 1, limit = 8) => {
+  fetchSweets: async (searchTerm = "", page = 1, limit = 8, category = "", sort = "") => {
     set({ isLoading: true });
     try {
       const { data } = await api.get("/sweets", { 
-        params: { search: searchTerm, page, limit } 
+        params: { search: searchTerm, page, limit, category, sort } 
       });
       // Store the full paginated response
       set({ 
@@ -134,4 +134,3 @@ const useSweetStore = create((set) => ({
 }));
 
 export default useSweetStore;
-

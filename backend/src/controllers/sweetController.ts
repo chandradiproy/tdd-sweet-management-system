@@ -9,18 +9,26 @@ import { IAuthRequest } from '../middleware/authMiddleware';
  */
 export const getSweets = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { search, category, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
+    const { search, category, minPrice, maxPrice, page = 1, limit = 10, sort } = req.query;
     let query: any = {};
     if (search) {
       query.name = { $regex: search, $options: 'i' };
     }
     if (category) {
-      query.category = category;
+      query.category = category as string;
     }
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
       if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
+
+    let sortOptions: any = {};
+    if (sort) {
+        const [sortBy, sortOrder] = (sort as string).split('-');
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    } else {
+        sortOptions.createdAt = -1;
     }
     
     const pageNum = Number(page);
@@ -28,6 +36,7 @@ export const getSweets = async (req: Request, res: Response, next: NextFunction)
 
     const count = await Sweet.countDocuments(query);
     const sweets = await Sweet.find(query)
+      .sort(sortOptions)
       .limit(limitNum)
       .skip(limitNum * (pageNum - 1));
 
@@ -146,4 +155,3 @@ export const restockSweet = async (req: Request, res: Response, next: NextFuncti
     next(error);
   }
 };
-

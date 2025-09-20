@@ -6,6 +6,7 @@ import User, { IUser } from '../models/User';
 
 // Extend the Express Request interface to include a user property
 export interface IAuthRequest extends Request {
+  params: any;
   user?: IUser; 
 }
 

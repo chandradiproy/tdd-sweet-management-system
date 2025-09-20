@@ -91,7 +91,7 @@ Follow these steps to get the project running on your local machine.
 
 ```bash
 # Clone the repository
-git clone [Your Repository URL]
+git clone https://github.com/chandradiproy/tdd-sweet-management-system
 cd sweet-shop-management/backend
 
 # Install dependencies

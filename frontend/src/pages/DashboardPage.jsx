@@ -15,6 +15,15 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from '@/components/ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const PREDEFINED_CATEGORIES = ['Candy', 'Chocolate', 'Cookie', 'Cupcake', 'Gummy', 'Indian Sweets', 'Pastry', 'Other'];
 
 const DashboardPage = () => {
   const { user } = useAuthStore();
@@ -25,10 +34,17 @@ const DashboardPage = () => {
   const [editingSweet, setEditingSweet] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterCategory, setFilterCategory] = useState("");
+  const [sortBy, setSortBy] = useState("");
 
   useEffect(() => {
-    fetchSweets(searchTerm, currentPage);
-  }, [fetchSweets, searchTerm, currentPage]);
+    // Reset to page 1 whenever filters change
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, sortBy]);
+
+  useEffect(() => {
+    fetchSweets(searchTerm, currentPage, 8, filterCategory, sortBy);
+  }, [fetchSweets, searchTerm, currentPage, filterCategory, sortBy]);
 
   const handleOpenEditModal = (sweet) => {
     setEditingSweet(sweet);
@@ -59,18 +75,40 @@ const DashboardPage = () => {
         )}
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="Search for sweets..."
-          className="w-full pl-10"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="relative md:col-span-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search for sweets..."
+            className="w-full pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={filterCategory} onValueChange={(value) => setFilterCategory(value === 'all' ? '' : value)}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Filter by category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {PREDEFINED_CATEGORIES.map(cat => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={(value) => setSortBy(value === 'default' ? '' : value)}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Default</SelectItem>
+            <SelectItem value="price-asc">Price: Low to High</SelectItem>
+            <SelectItem value="price-desc">Price: High to Low</SelectItem>
+            <SelectItem value="name-asc">Name: A-Z</SelectItem>
+            <SelectItem value="name-desc">Name: Z-A</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
@@ -148,4 +186,3 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
-
